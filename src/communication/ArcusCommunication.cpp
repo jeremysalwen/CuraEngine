@@ -6,6 +6,9 @@
 #include <Arcus/Socket.h> //The socket to communicate to.
 #include <thread> //To sleep while waiting for the connection.
 #include <unordered_map> //To map settings to their extruder numbers for limit_to_extruder.
+#include <google/protobuf/text_format.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <fcntl.h>
 
 #include "ArcusCommunication.h"
 #include "ArcusCommunicationPrivate.h" //Our PIMPL.
@@ -490,6 +493,11 @@ void ArcusCommunication::sliceNext()
         return;
     }
     logDebug("Received a Slice message.\n");
+    int fd = open("/tmp/curaslicer_dump.txt", O_RDWR| O_CREAT | O_TRUNC, 0644);
+    google::protobuf::io::FileOutputStream of(fd);
+    google::protobuf::TextFormat::Print(*slice_message, &of);
+    of.Close();
+
 
     Slice slice(slice_message->object_lists().size());
     Application::getInstance().current_slice = &slice;
